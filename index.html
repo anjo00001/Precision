@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precision Exe</title>
+
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+        }
+
+        body{
+            min-height:100svh;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            background:
+                radial-gradient(900px 500px at 10% 0%, rgba(157,77,255,.35), transparent),
+                radial-gradient(800px 400px at 100% 20%, rgba(106,0,255,.35), transparent),
+                linear-gradient(135deg,#0f001a,#1a002b);
+            color:#f3e9ff;
+            overflow:hidden;
+        }
+
+        .panel{
+            width:100%;
+            max-width:360px;
+            padding:26px;
+            border-radius:26px;
+            background:linear-gradient(180deg,#1a002b,#12001f);
+            box-shadow:
+                0 0 0 1px rgba(157,77,255,.35),
+                0 25px 70px rgba(106,0,255,.55),
+                inset 0 0 45px rgba(157,77,255,.35);
+        }
+
+        h1{
+            text-align:center;
+            font-size:22px;
+            color:#b388ff;
+            margin-bottom:20px;
+            letter-spacing:.6px;
+        }
+
+        .game-select{
+            display:flex;
+            gap:12px;
+            margin-bottom:18px;
+        }
+
+        .game-btn{
+            flex:1;
+            padding:12px;
+            border:none;
+            border-radius:14px;
+            font-weight:700;
+            cursor:pointer;
+            color:#14001f;
+            background:linear-gradient(90deg,#6a00ff,#9d4dff);
+        }
+
+        #aimbotBtn{
+            width:100%;
+            padding:14px;
+            border-radius:16px;
+            border:none;
+            background:#1f0033;
+            color:#e8d9ff;
+            font-size:16px;
+            font-weight:600;
+            cursor:pointer;
+            margin:10px 0;
+        }
+
+        #aimbotBtn.active{
+            background:linear-gradient(90deg,#6a00ff,#9d4dff);
+            color:#14001f;
+        }
+
+        .status{
+            margin-top:12px;
+            padding:12px;
+            border-radius:14px;
+            background:#1f0033;
+            text-align:center;
+            font-size:14px;
+            color:#e8d9ff;
+        }
+
+        .info{
+            margin-top:16px;
+            font-size:12px;
+            color:#c9b3ff;
+            text-align:center;
+            line-height:1.4;
+        }
+#effects{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100vw;
+  height:100vh;
+  z-index:0;
+  pointer-events:none;
+}
+
+/* garante painel acima */
+.panel{
+  position:relative;
+  z-index:2;
+}
+    </style>
+</head>
+<body>
+<canvas id="effects"></canvas>
+<div class="panel" id="keyBox">
+    <h1>Precision Exe</h1>
+
+
+  <p style="text-align:center;margin-bottom:14px;color:#c9b3ff;">
+    Insira sua KEY para continuar
+  </p>
+
+  <input 
+    type="text" 
+    id="keyInput" 
+    placeholder="Digite sua KEY"
+    style="
+      width:100%;
+      padding:14px;
+      border-radius:14px;
+      border:none;
+      background:#1f0033;
+      color:#fff;
+      margin-bottom:14px;
+      text-align:center;
+      font-size:15px;
+    "
+  >
+
+  <button 
+    onclick="verificarKey()"
+    style="
+      width:100%;
+      padding:14px;
+      border-radius:18px;
+      border:none;
+      font-weight:700;
+      background:linear-gradient(90deg,#6a00ff,#9d4dff);
+      color:#14001f;
+      font-size:16px;
+      cursor:pointer;
+    "
+  >
+    ENTRAR
+  </button>
+
+  <p id="keyStatus" style="margin-top:12px;text-align:center;font-size:13px;"></p>
+</div>
+    <div class="panel" id="painel" style="display:none;">
+        <h1>Precision Exe</h1>
+
+    <div class="game-select">
+        <button class="game-btn" onclick="selectGame('freefireth')">Free Fire</button>
+        <button class="game-btn" onclick="selectGame('freefiremax')">Free Fire Max</button>
+    </div>
+
+    <button id="aimbotBtn" onclick="toggleAimbot()">Ativar Precision</button>
+
+    <div class="status" id="status">
+        Selecione um jogo
+    </div>
+
+    <div class="info">
+        <p>USE COM MODERAÇÃO.</p>
+        <p>SIGA O CRIADOR: 4njoz</p>
+    </div>
+</div>
+
+<script>
+    let gameSelecionado = '';
+    let aimbotActive = false;
+    let aimbotInterval;
+
+    const HEAD_OFFSET = 50;
+
+    function selectGame(game){
+        gameSelecionado = game;
+        document.getElementById('status').textContent =
+            game === 'freefireth'
+            ? 'Free Fire selecionado'
+            : 'Free Fire Max selecionado';
+    }
+
+    function toggleAimbot(){
+        if(!gameSelecionado){
+            alert('Selecione um jogo primeiro');
+            return;
+        }
+
+        aimbotActive = !aimbotActive;
+        const btn = document.getElementById('aimbotBtn');
+
+        if(aimbotActive){
+            btn.classList.add('active');
+            btn.textContent = 'Desativar Precision';
+            startAimbot();
+            updateStatus('PRECISION ON ✅');
+
+             falar("precision exe ativado")
+
+        }else{
+            btn.classList.remove('active');
+            btn.textContent = 'Ativar Precision';
+            stopAimbot();
+            updateStatus('PRECISION OFF 🚫');
+        }
+    }
+
+    function startAimbot(){
+        stopAimbot();
+        aimbotInterval = setInterval(updateAimbot, 10);
+    }
+
+    function stopAimbot(){
+        clearInterval(aimbotInterval);
+        trackingHistory = [];
+    }
+
+    async function updateAimbot(){
+        const mira = await getMiraPos();
+        const alvo = await getAlvoPos();
+
+        let head = {
+            x: alvo.x,
+            y: alvo.y - HEAD_OFFSET
+        };
+
+        const dx = head.x - mira.x;
+        const dy = head.y - mira.y;
+        const dist = Math.hypot(dx, dy);
+
+        if(dist > deadZoneRadius){
+            const ratio = deadZoneRadius / dist;
+            head.x = mira.x + dx * ratio;
+            head.y = mira.y + dy * ratio;
+        }
+
+        antigoX = antigoX * 0.95 + head.x * 0.05;
+        antigoY = antigoY * 0.95 + head.y * 0.05;
+
+        await setMiraPos(antigoX, antigoY);
+
+        if(Date.now() - lastShotTime > shotDelay){
+            lastShotTime = Date.now();
+            simulateShoot();
+        }
+    }
+
+    function simulateShoot(){
+        console.log("Shoot");
+    }
+
+    async function getMiraPos(){
+        const r = await fetch(PROXY_URL + '/mira');
+        return await r.json();
+    }
+
+    async function getAlvoPos(){
+        const r = await fetch(PROXY_URL + '/alvo');
+        return await r.json();
+    }
+
+    async function setMiraPos(x,y){
+        await fetch(PROXY_URL + '/mira',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({x,y})
+        });
+    }
+
+    function updateStatus(t){
+        document.getElementById('status').textContent = t;
+    }
+// ================== CONFIG ==================
+let headX = 300;
+let headY = 120;
+
+// tamanho do range (em pixels na tela)
+const RANGE_X = 400;
+const RANGE_Y = 400;
+
+// velocidade do puxão (alto = mais agressivo)
+const PULL_SPEED = 99999;
+
+// ================== MIRA ==================
+let aimX = 0;
+let aimY = 0;
+
+// ================== FUNÇÃO ÚNICA ==================
+function updateAimWithRange() {
+
+  const dx = headX - aimX;
+  const dy = headY - aimY;
+
+  // 🔍 verifica se está dentro do range da tela
+  if (Math.abs(dx) <= RANGE_X && Math.abs(dy) <= RANGE_Y) {
+
+    // 🧲 puxa direto pra cabeça
+    aimX += Math.sign(dx) * Math.min(Math.abs(dx), PULL_SPEED);
+    aimY += Math.sign(dy) * Math.min(Math.abs(dy), PULL_SPEED);
+  }
+
+  // 🔒 TRAVA ABSOLUTA (0 pixel)
+  if (aimX !== headX) aimX = headX;
+  if (aimY !== headY) aimY = headY;
+
+  return { x: aimX, y: aimY };
+}
+
+const API_URL = "https://695ea5b02556fd22f67905d1.mockapi.io/HeadTrick-keys";
+
+function getDeviceFingerprint(){
+  const data = [
+    screen.width,
+    screen.height,
+    navigator.language,
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
+    navigator.hardwareConcurrency || 4,
+    navigator.platform
+  ].join("|");
+
+  let hash = 0;
+  for (let i = 0; i < data.length; i++) {
+    hash = ((hash << 5) - hash) + data.charCodeAt(i);
+    hash |= 0;
+  }
+  return "FP-" + Math.abs(hash);
+}
+
+async function verificarKey(){
+  const key = document.getElementById("keyInput").value.trim();
+  const status = document.getElementById("keyStatus");
+  const deviceId = getDeviceFingerprint();
+
+  if(!key){
+    status.textContent = "Digite a key";
+    status.style.color = "#ff5c5c";
+    return;
+  }
+
+  status.textContent = "Verificando key...";
+  status.style.color = "#c9b3ff";
+
+  try{
+    const res = await fetch(API_URL);
+    const data = await res.json();
+
+    const keyObj = data.find(k =>
+      k.key === key &&
+      k.active === "true" &&
+      (
+        !k.usedBy ||
+        k.usedBy === "" ||
+        k.usedBy === deviceId
+      )
+    );
+
+    if(!keyObj){
+      status.textContent = "Essa key já foi usada em outro celular";
+      status.style.color = "#ff5c5c";
+      return;
+    }
+
+    // trava no primeiro celular
+    if(!keyObj.usedBy || keyObj.usedBy === ""){
+      await fetch(`${API_URL}/${keyObj.id}`,{
+        method:"PUT",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+          ...keyObj,
+          usedBy: deviceId
+        })
+      });
+    }
+
+    localStorage.setItem("keyValida","true");
+
+    document.getElementById("keyBox").style.display = "none";
+    document.getElementById("painel").style.display = "block";
+
+  }catch(e){
+    status.textContent = "Erro ao conectar";
+    status.style.color = "#ff5c5c";
+  }
+}
+
+function falar(texto){
+    if(!('speechSynthesis' in window)) return;
+
+    const msg = new SpeechSynthesisUtterance(texto);
+    msg.lang = 'pt-BR';
+    msg.rate = 1;
+    msg.pitch = 1;
+    msg.volume = 1;
+
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(msg);
+}
+
+const canvas = document.getElementById("effects");
+const ctx = canvas.getContext("2d");
+
+function resize(){
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+}
+resize();
+addEventListener("resize", resize);
+
+// 🌧️ CHUVA
+const rain = [];
+for(let i=0;i<140;i++){
+  rain.push({
+    x:Math.random()*canvas.width,
+    y:Math.random()*canvas.height,
+    v:4+Math.random()*6,
+    l:10+Math.random()*22
+  });
+}
+
+// ⚡ RAIO NEON
+let lightning = null;
+let flash = 0;
+
+function createLightning(){
+  const startX = Math.random()*canvas.width;
+  let y = 0;
+  lightning = [];
+
+  while(y < canvas.height){
+    lightning.push({
+      x: startX + Math.random()*60 - 30,
+      y
+    });
+    y += 18 + Math.random()*30;
+  }
+
+  flash = 1;
+  setTimeout(()=> lightning=null,180);
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // 💥 FLASH ROXO
+  if(flash > 0){
+    ctx.fillStyle = `rgba(180,0,255,${flash*0.25})`;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    flash -= 0.04;
+  }
+
+  // 🌧️ CHUVA
+  ctx.strokeStyle="rgba(255,255,255,.55)";
+  ctx.lineWidth=1;
+  for(const d of rain){
+    ctx.beginPath();
+    ctx.moveTo(d.x,d.y);
+    ctx.lineTo(d.x,d.y+d.l);
+    ctx.stroke();
+
+    d.y += d.v;
+    if(d.y > canvas.height){
+      d.y = -20;
+      d.x = Math.random()*canvas.width;
+    }
+  }
+
+  // ⚡ RAIO ROXO NEON
+  if(lightning){
+    ctx.save();
+    ctx.shadowBlur = 25;
+    ctx.shadowColor = "#b100ff";
+    ctx.strokeStyle = "#d36bff";
+    ctx.lineWidth = 2.5;
+
+    ctx.beginPath();
+    ctx.moveTo(lightning[0].x, lightning[0].y);
+    for(const p of lightning){
+      ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+// ⚡ FREQUÊNCIA DOS RAIOS
+setInterval(()=>{
+  if(Math.random() < 0.9){
+    createLightning();
+  }
+},2800);
+</script>
+
+</body>
+</html>
